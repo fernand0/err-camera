@@ -1,0 +1,6 @@
+[Core]
+Name = Pruebas
+Module = pruebas
+
+[Documentation]
+Description = let's try things !
