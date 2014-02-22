@@ -34,9 +34,9 @@ class Hello(BotPlugin):
     def foto(self, msg, args):
         """Take a picture"""
         quien=msg.getFrom().getStripped()
-        arg='/home/pi/usr/src/Python/cam.py'
+        arg='/home/pi/usr/src/Python/utils/cam.py'
         p=subprocess.Popen(arg,shell=True,stdout=subprocess.PIPE)
-        arg='/home/pi/usr/src/Python/mail.py %s'%quien
+        arg='/home/pi/usr/src/Python/utils/mail.py %s'%quien
         p=subprocess.Popen(arg,shell=True,stdout=subprocess.PIPE)
         my_msg = 'Mando la foto ... %s'%quien
         yield "Thanks for sending this command**"
