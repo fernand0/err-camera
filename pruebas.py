@@ -1,8 +1,20 @@
 from errbot import BotPlugin, botcmd
-import subprocess,os
+import subprocess,os,time
 
-class Hello(BotPlugin):
+import cv2, time
+
+import smtplib, mimetypes, time
+from email import Encoders
+from email.MIMEText import MIMEText
+from email.MIMEBase import MIMEBase
+from email.MIMEMultipart import MIMEMultipart
+
+
+class Pruebas(BotPlugin):
     """Example 'Hello, world!' plugin for Err"""
+
+    def get_configuration_template(self):
+        return{'ADDRESS' : u'kk@kk.com', 'FROMADD' : u'kk@kk.com', 'TOADDRS' : u'kk@kk.com', 'SUBJECT' : u'Imagen', u'SMTPSRV' : u'smtp.gmail.com:587', 'LOGINID' : u'changeme', 'LOGINPW' : u'changeme'} 
 
     @botcmd
     def hello(self, msg, args):
@@ -34,11 +46,57 @@ class Hello(BotPlugin):
     def foto(self, msg, args):
         """Take a picture"""
         quien=msg.getFrom().getStripped()
-        arg='/home/pi/usr/src/Python/utils/cam.py'
-        p=subprocess.Popen(arg,shell=True,stdout=subprocess.PIPE)
-        arg='/home/pi/usr/src/Python/utils/mail.py %s'%quien
-        p=subprocess.Popen(arg,shell=True,stdout=subprocess.PIPE)
-        my_msg = 'Mando la foto ... %s'%quien
-        yield "Thanks for sending this command**"
+        yield "I'm taking the picture, wait a second"
+        self.camera("/tmp/imagen.png",0)
+        yield "Now I'm sending it"
+        self.mail("/tmp/imagen.png", quien)
+        my_msg = "I've sent it to ... %s"%quien
         yield my_msg
 
+    def camera(self, imgFile, whichCam):
+        """Take a picture"""
+	cam=cv2.VideoCapture(whichCam)
+        cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 1280)
+        cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 960)
+        retval, img = cam.read() 
+        cv2.imwrite(imgFile, img)
+        del(cam)
+
+    def mail(self, imgFile, address=""):
+        """Send a file by mail"""
+
+        destaddr = self.config['ADDRESS']
+        fromaddr = self.config['FROMADD']
+	if (address==""):
+		toaddrs=self.config['TOADDRS']
+	else:
+		toaddrs  = address
+        subject  = self.config['SUBJECT']
+        smtpsrv  = self.config['SMTPSRV']
+        loginId  = self.config['LOGINID']
+        loginPw  = self.config['LOGINPW']
+
+        mensaje = MIMEMultipart()
+
+        format, enc = mimetypes.guess_type(imgFile)
+        main, sub = format.split('/')
+        adjunto = MIMEBase(main, sub)
+        adjunto.set_payload(open(imgFile,"rb").read())
+        Encoders.encode_base64(adjunto)
+        adjunto.add_header('Content-Disposition', 'attachment; filename="%s"' % imgFile)
+        mensaje.attach(adjunto)
+
+
+        mensaje['Subject'] = subject
+        mensaje['From'] = fromaddr
+        mensaje['To'] = destaddr
+        mensaje['Cc'] = toaddrs
+
+        server = smtplib.SMTP()
+        #server.set_debuglevel(1)
+        server.connect(smtpsrv)
+        server.ehlo()
+        server.starttls()
+        server.login(loginId, loginPw)
+        server.sendmail(fromaddr, [destaddr]+[toaddrs], mensaje.as_string(0))
+        server.quit() 
