@@ -46,8 +46,16 @@ class Pruebas(BotPlugin):
     def foto(self, msg, args):
         """Take a picture"""
         quien=msg.getFrom().getStripped()
-        yield "I'm taking the picture, wait a second"
-        self.camera("/tmp/imagen.png",0)
+        yield "I'm taking the picture, wait a second "
+        if (args):
+            try:
+               cam=int(args)
+            except:
+               cam=0
+        else:
+	    cam=0
+        yield "Camera %s"%cam
+        self.camera("/tmp/imagen.png",cam)
         yield "Now I'm sending it"
         self.mail("/tmp/imagen.png", quien)
         my_msg = "I've sent it to ... %s"%quien
