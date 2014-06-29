@@ -1,5 +1,11 @@
 from errbot import BotPlugin, botcmd
 import subprocess,os,time
+import math
+from RPIO import PWM
+
+MAX=2340
+MIN=600
+VEL=0.2
 
 import cv2, time
 
@@ -33,7 +39,7 @@ class Pruebas(BotPlugin):
         ipaddr = split_data[split_data.index('src')+1]
         my_ip = 'La ip de la raspberry es %s' %  ipaddr
         #yield "Thanks for sending\n**%(body)s**" % msg
-	yield my_ip
+        yield my_ip
 
     @botcmd
     def ls(self, msg, args):
@@ -53,7 +59,7 @@ class Pruebas(BotPlugin):
             except:
                cam=0
         else:
-	    cam=0
+            cam=0
         yield "Camera %s"%cam
         self.camera("/tmp/imagen.png",cam)
         yield "Now I'm sending it"
@@ -63,7 +69,7 @@ class Pruebas(BotPlugin):
 
     def camera(self, imgFile, whichCam):
         """Take a picture"""
-	cam=cv2.VideoCapture(whichCam)
+        cam=cv2.VideoCapture(whichCam)
         cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 1280)
         cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 960)
         retval, img = cam.read() 
@@ -75,36 +81,110 @@ class Pruebas(BotPlugin):
 
         destaddr = self.config['ADDRESS']
         fromaddr = self.config['FROMADD']
-	if (address==""):
-		toaddrs=self.config['TOADDRS']
-	else:
-		toaddrs  = address
-        subject  = self.config['SUBJECT']
-        smtpsrv  = self.config['SMTPSRV']
-        loginId  = self.config['LOGINID']
-        loginPw  = self.config['LOGINPW']
+        if (address==""):
+            toaddrs=self.config['TOADDRS']
+        else:
+            toaddrs  = address
+            subject  = self.config['SUBJECT']
+            smtpsrv  = self.config['SMTPSRV']
+            loginId  = self.config['LOGINID']
+            loginPw  = self.config['LOGINPW']
+    
+            mensaje = MIMEMultipart()
+    
+            format, enc = mimetypes.guess_type(imgFile)
+            main, sub = format.split('/')
+            adjunto = MIMEBase(main, sub)
+            adjunto.set_payload(open(imgFile,"rb").read())
+            Encoders.encode_base64(adjunto)
+            adjunto.add_header('Content-Disposition', 'attachment; filename="%s"' % imgFile)
+            mensaje.attach(adjunto)
+    
+    
+            mensaje['Subject'] = subject
+            mensaje['From'] = fromaddr
+            mensaje['To'] = destaddr
+            mensaje['Cc'] = toaddrs
+    
+            server = smtplib.SMTP()
+            #server.set_debuglevel(1)
+            server.connect(smtpsrv)
+            server.ehlo()
+            server.starttls()
+            server.login(loginId, loginPw)
+            server.sendmail(fromaddr, [destaddr]+[toaddrs], mensaje.as_string(0))
+            server.quit() 
 
-        mensaje = MIMEMultipart()
+    @botcmd
+    def mfoto(self, msg, args):
+	"""Move the servo, take the picture, send it, return to
+           the initial position
+        """
 
-        format, enc = mimetypes.guess_type(imgFile)
-        main, sub = format.split('/')
-        adjunto = MIMEBase(main, sub)
-        adjunto.set_payload(open(imgFile,"rb").read())
-        Encoders.encode_base64(adjunto)
-        adjunto.add_header('Content-Disposition', 'attachment; filename="%s"' % imgFile)
-        mensaje.attach(adjunto)
+        cam=0
+        servo = PWM.Servo()
+        posCam = (MIN+MAX)/2
+
+        if (args):
+            try:
+	       mov = float(args)
+            except:
+               mov = 0.5
+        else:
+            mov = -0.4
+
+        yield "Moving %f"%mov
+
+        self.move(servo, mov, posCam)
+
+	posCam=posCam + (MAX-MIN)*mov
+	posCam = int(posCam/10)*10
+
+        quien=msg.getFrom().getStripped()
+
+        yield "I'm taking the picture, wait a second "
+
+        self.camera("/tmp/imagen.png",cam)
+
+        yield "Now I'm sending it"
+        self.mail("/tmp/imagen.png", quien)
+
+        my_msg = "I've sent it to ... %s"%quien
+
+        yield "Returning to the initial position "
+        self.move(servo, -mov,posCam)
 
 
-        mensaje['Subject'] = subject
-        mensaje['From'] = fromaddr
-        mensaje['To'] = destaddr
-        mensaje['Cc'] = toaddrs
+      
+    def move(self, servo, pos, posIni=MIN, inc=10):
 
-        server = smtplib.SMTP()
-        #server.set_debuglevel(1)
-        server.connect(smtpsrv)
-        server.ehlo()
-        server.starttls()
-        server.login(loginId, loginPw)
-        server.sendmail(fromaddr, [destaddr]+[toaddrs], mensaje.as_string(0))
-        server.quit() 
+        servoGPIO=18
+        servoGPIO=17 
+        posFin=posIni + (MAX-MIN)*pos
+        steps=abs(posFin - posIni) / inc
+
+        print "Pos ini", posIni
+        print "Pos fin", posFin
+        print "Steps", steps 
+        print int(steps)
+
+        if pos < 0:
+            pos = -pos
+            sign = -1
+        else:
+            sign = 1
+
+        for i in range(int(steps)):
+            servo.set_servo(servoGPIO,posIni+10*i*sign)
+            time.sleep(VEL)
+
+        print "Pos ini", posIni
+        print "Pos fin", posFin
+        print "Steps", steps 
+        print int(steps)
+
+        servo.stop_servo(servoGPIO)
+
+        #return posFin
+
+
