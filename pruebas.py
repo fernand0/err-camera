@@ -116,6 +116,54 @@ class Pruebas(BotPlugin):
             server.quit() 
 
     @botcmd
+    def rfoto(self, msg, args):
+	"""Move the servo, take the picture, send it, return to
+           the initial position
+        """
+
+        cam=0
+        servo = PWM.Servo()
+        posCam = (MIN+MAX)/2
+
+        if (args):
+            try:
+	       mov = float(args)
+            except:
+               mov = 0.5
+        else:
+            mov = -0.4
+
+        yield "Moving %f"%mov
+	
+        servoGPIO=18
+
+	posIni=(MIN+MAX)/2
+	posFin=posIni + 10*int((MAX-MIN)*mov/10)
+	
+	yield "Going to %d"%posIni
+	servo.set_servo(servoGPIO, posIni)
+	time.sleep(0.1)
+
+	yield "Going to %d"%posFin
+	servo.set_servo(servoGPIO, posFin)
+
+        quien=msg.getFrom().getStripped()
+
+        yield "I'm taking the picture, wait a second "
+        self.camera("/tmp/imagen.png",cam)
+
+	yield "Returning to the initial position (%d)"%posIni
+	servo.set_servo(servoGPIO, posIni)
+
+        yield "Now I'm sending the picture"
+        self.mail("/tmp/imagen.png", quien)
+
+        my_msg = "I've sent it to ... %s"%quien
+
+        yield "Stoping the servo "
+        servo.stop_servo(servoGPIO)
+
+    @botcmd
     def mfoto(self, msg, args):
 	"""Move the servo, take the picture, send it, return to
            the initial position
@@ -158,8 +206,8 @@ class Pruebas(BotPlugin):
       
     def move(self, servo, pos, posIni=MIN, inc=10):
 
-        servoGPIO=18
         servoGPIO=17 
+        servoGPIO=18
         posFin=posIni + (MAX-MIN)*pos
         steps=abs(posFin - posIni) / inc
 
