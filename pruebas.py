@@ -66,6 +66,14 @@ class Pruebas(BotPlugin):
         self.mail("/tmp/imagen.png", quien)
         my_msg = "I've sent it to ... %s"%quien
         yield my_msg
+    # This function maps the angle we want to move the servo to, to the needed
+    # PWM value
+    #
+    # https://github.com/MattStultz/PiCam
+    #
+    def angleMap(self, angle):
+        return int((round((1950.0/180.0),0)*angle)/10)*10+550
+
 
     def camera(self, imgFile, whichCam):
         """Take a picture"""
@@ -123,37 +131,31 @@ class Pruebas(BotPlugin):
 
         cam=0
         servo = PWM.Servo()
-        posCam = (MIN+MAX)/2
+        servoGPIO=18
 
         if (args):
             try:
 	       mov = float(args)
             except:
-               mov = 0.5
+               mov = 0
         else:
-            mov = -0.4
+            mov = 180
 
         yield "Moving %f"%mov
 	
-        servoGPIO=18
-
-	posIni=(MIN+MAX)/2
-	posFin=posIni + 10*int((MAX-MIN)*mov/10)
-	
-	yield "Going to %d"%posIni
-	servo.set_servo(servoGPIO, posIni)
+	servo.set_servo(servoGPIO, self.angleMap(90))
 	time.sleep(0.1)
 
-	yield "Going to %d"%posFin
-	servo.set_servo(servoGPIO, posFin)
+	yield "Going to %d"%mov
+	servo.set_servo(servoGPIO, self.angleMap(mov))
 
         quien=msg.getFrom().getStripped()
 
         yield "I'm taking the picture, wait a second "
         self.camera("/tmp/imagen.png",cam)
 
-	yield "Returning to the initial position (%d)"%posIni
-	servo.set_servo(servoGPIO, posIni)
+	yield "Returning to the initial position"
+	servo.set_servo(servoGPIO, self.angleMap(90))
 
         yield "Now I'm sending the picture"
         self.mail("/tmp/imagen.png", quien)
