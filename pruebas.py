@@ -9,7 +9,7 @@ VEL=0.2
 
 import cv2, time
 
-import smtplib, mimetypes, time
+import smtplib, mimetypes, time, datetime
 from email import Encoders
 from email.MIMEText import MIMEText
 from email.MIMEBase import MIMEBase
@@ -102,11 +102,16 @@ class Pruebas(BotPlugin):
     
             format, enc = mimetypes.guess_type(imgFile)
             main, sub = format.split('/')
-            adjunto = MIMEBase(main, sub)
-            adjunto.set_payload(open(imgFile,"rb").read())
-            Encoders.encode_base64(adjunto)
-            adjunto.add_header('Content-Disposition', 'attachment; filename="%s"' % imgFile)
-            mensaje.attach(adjunto)
+            text = "Picture taken on: %s"%datetime.datetime.now().isoformat()
+            # We are including the date in the body of the message.
+            part1 = MIMEText(text, 'plain')
+
+            part2 = MIMEBase(main, sub)
+            part2.set_payload(open(imgFile,"rb").read())
+            Encoders.encode_base64(part2)
+            part2.add_header('Content-Disposition', 'attachment; filename="%s"' % imgFile)
+            mensaje.attach(part1)
+            mensaje.attach(part2)
     
     
             mensaje['Subject'] = subject
