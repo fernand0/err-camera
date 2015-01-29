@@ -130,8 +130,8 @@ class Camera(BotPlugin):
 
     @botcmd
     def rfoto(self, msg, args):
-	"""Move the servo, take the picture, send it, return to
-           the initial position
+	"""Move the servo, take the picture, send it.
+	   It won't return to the initial position
         """
 
         cam=0
@@ -142,14 +142,10 @@ class Camera(BotPlugin):
             try:
 	       mov = float(args)
             except:
-               mov = 0
+               mov = 90
         else:
-            mov = 180
+            mov = 90
 
-        yield "Moving %f"%mov
-	
-	servo.set_servo(servoGPIO, self.angleMap(90))
-	time.sleep(0.1)
 
 	yield "Going to %d"%mov
 	servo.set_servo(servoGPIO, self.angleMap(mov))
@@ -159,8 +155,8 @@ class Camera(BotPlugin):
         yield "I'm taking the picture, wait a second "
         self.camera("/tmp/imagen.png",cam)
 
-	yield "Returning to the initial position"
-	servo.set_servo(servoGPIO, self.angleMap(90))
+	#yield "Returning to the initial position"
+	#servo.set_servo(servoGPIO, self.angleMap(90))
 
         yield "Now I'm sending the picture"
         self.mail("/tmp/imagen.png", quien)
@@ -173,7 +169,7 @@ class Camera(BotPlugin):
     @botcmd
     def mfoto(self, msg, args):
 	"""Move the servo, take the picture, send it, return to
-           the initial position
+           the initial position. Now with angles instead percentages.
         """
 
         cam=0
