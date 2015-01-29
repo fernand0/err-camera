@@ -18,6 +18,14 @@ from email.MIMEMultipart import MIMEMultipart
 
 class Camera(BotPlugin):
     """Example 'Hello, world!' plugin for Err"""
+    posCam=90
+    servoGPIO=18
+    
+    def __init__(self):
+        self.posCam=90
+        self.servoGPIO=18
+        self.movePos(self.posCam)
+
 
     def get_configuration_template(self):
         return{'ADDRESS' : u'kk@kk.com', 'FROMADD' : u'kk@kk.com', 'TOADDRS' : u'kk@kk.com', 'SUBJECT' : u'Imagen', u'SMTPSRV' : u'smtp.gmail.com:587', 'LOGINID' : u'changeme', 'LOGINPW' : u'changeme'} 
@@ -66,6 +74,7 @@ class Camera(BotPlugin):
         self.mail("/tmp/imagen.png", quien)
         my_msg = "I've sent it to ... %s"%quien
         yield my_msg
+
     # This function maps the angle we want to move the servo to, to the needed
     # PWM value
     #
@@ -135,8 +144,33 @@ class Camera(BotPlugin):
         """
 
         cam=0
-        servo = PWM.Servo()
-        servoGPIO=18
+        if (args):
+            try:
+	       mov = float(args)
+            except:
+               mov = 90
+        else:
+            mov = 90
+
+
+	yield "Going to %d"%mov
+	self.movePos(self.angleMap(mov))
+
+        quien=msg.getFrom().getStripped()
+
+        yield "I'm taking the picture, wait a second "
+        self.camera("/tmp/imagen.png",cam)
+
+        yield "Now I'm sending the picture"
+        self.mail("/tmp/imagen.png", quien)
+
+        my_msg = "I've sent it to ... %s"%quien
+
+    @botcmd
+    def mfoto(self, msg, args):
+	"""Move the servo, take the picture, send it, return to
+           the initial position. Now with angles instead percentages.
+        """
 
         if (args):
             try:
@@ -148,94 +182,37 @@ class Camera(BotPlugin):
 
 
 	yield "Going to %d"%mov
-	servo.set_servo(servoGPIO, self.angleMap(mov))
+	self.move(servoGPIO, mov)
 
         quien=msg.getFrom().getStripped()
 
         yield "I'm taking the picture, wait a second "
         self.camera("/tmp/imagen.png",cam)
-
-	#yield "Returning to the initial position"
-	#servo.set_servo(servoGPIO, self.angleMap(90))
 
         yield "Now I'm sending the picture"
         self.mail("/tmp/imagen.png", quien)
 
         my_msg = "I've sent it to ... %s"%quien
 
-        yield "Stoping the servo "
-        servo.stop_servo(servoGPIO)
 
-    @botcmd
-    def mfoto(self, msg, args):
-	"""Move the servo, take the picture, send it, return to
-           the initial position. Now with angles instead percentages.
-        """
-
-        cam=0
+    def movePos(self, pos):
         servo = PWM.Servo()
-        posCam = (MIN+MAX)/2
-
-        if (args):
-            try:
-	       mov = float(args)
-            except:
-               mov = 0.5
-        else:
-            mov = -0.4
-
-        yield "Moving %f"%mov
-
-        self.move(servo, mov, posCam)
-
-	posCam=posCam + (MAX-MIN)*mov
-	posCam = int(posCam/10)*10
-
-        quien=msg.getFrom().getStripped()
-
-        yield "I'm taking the picture, wait a second "
-
-        self.camera("/tmp/imagen.png",cam)
-
-        yield "Now I'm sending it"
-        self.mail("/tmp/imagen.png", quien)
-
-        my_msg = "I've sent it to ... %s"%quien
-
-        yield "Returning to the initial position "
-        self.move(servo, -mov,posCam)
-
+        servo.set_servo(self.servoGPIO, self.angleMap(self.posCam))
+        time.sleep(VEL)
+        servo.stop_servo(self.servoGPIO)
 
       
-    def move(self, servo, pos, posIni=MIN, inc=10):
+    def move(self, pos, inc=1):
 
-        servoGPIO=17 
-        servoGPIO=18
-        posFin=posIni + (MAX-MIN)*pos
-        steps=abs(posFin - posIni) / inc
 
-        print "Pos ini", posIni
-        print "Pos fin", posFin
-        print "Steps", steps 
-        print int(steps)
-
-        if pos < 0:
-            pos = -pos
+        if pos < self.posCam:
             sign = -1
         else:
             sign = 1
 
-        for i in range(int(steps)):
-            servo.set_servo(servoGPIO,posIni+10*i*sign)
-            time.sleep(VEL)
 
-        print "Pos ini", posIni
-        print "Pos fin", posFin
-        print "Steps", steps 
-        print int(steps)
+	print self.posCam, pos
 
-        servo.stop_servo(servoGPIO)
-
-        #return posFin
-
-
+        for i in range(self.posCam, pos, sign):
+            print i
+            self.movePos(i)
