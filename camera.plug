@@ -1,6 +1,6 @@
 [Core]
-Name = Pruebas
-Module = pruebas
+Name = Camera
+Module = camera
 
 [Documentation]
-Description = let's try things !
+Description = Interacting with a web cam!
