@@ -16,7 +16,7 @@ from email.MIMEBase import MIMEBase
 from email.MIMEMultipart import MIMEMultipart
 
 
-class Pruebas(BotPlugin):
+class Camera(BotPlugin):
     """Example 'Hello, world!' plugin for Err"""
 
     def get_configuration_template(self):
