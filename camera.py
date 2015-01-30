@@ -38,6 +38,11 @@ class Camera(BotPlugin):
         yield "Hello, world!"
 
     @botcmd
+    def tellpos(self, msg, args):
+        """Say my internal ip"""
+        yield self.posCam
+
+    @botcmd
     def ip(self, msg, args):
         """Say my internal ip"""
         arg='ip route list'
@@ -85,18 +90,17 @@ class Camera(BotPlugin):
 
     def movePos(self, pos):
         servo = PWM.Servo()
-        servo.set_servo(self.servoGPIO, self.angleMap(self.posCam))
+        print pos 
+        print self.posCam 
+        servo.set_servo(self.servoGPIO, self.angleMap(pos))
         time.sleep(VEL)
         servo.stop_servo(self.servoGPIO)
         self.posCam=pos
 
     def move(self, pos, inc=1):
-        print "Aqui"
-        print "Going from %d to %d"%(self.posCam, pos)
         if (pos < self.posCam):
             inc = -1*inc
         for i in range(self.posCam, pos, inc):
-            print i
             self.movePos(i)
 
 
@@ -157,20 +161,17 @@ class Camera(BotPlugin):
     def rfoto(self, msg, args):
         #Move the servo, take the picture, send it.
         #It won't return to the initial position
-    
 
-        cam=0
         if (args):
             try:
-                mov = float(args)
+                mov = int(args)
             except:
                 mov = 90
         else:
             mov = 90
 
-
         yield "Going to %d"%mov
-        self.movePos(self.angleMap(mov))
+        self.movePos(mov)
 
         quien=msg.getFrom().getStripped()
 
