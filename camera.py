@@ -1,4 +1,7 @@
+
 from errbot import BotPlugin, botcmd
+from errbot.builtins.webserver import webhook
+
 import subprocess,os,time
 import math
 from RPIO import PWM
@@ -18,16 +21,13 @@ from email.MIMEMultipart import MIMEMultipart
 
 class Camera(BotPlugin):
     """Example 'Hello, world!' plugin for Err"""
+    cam=0
     posCam=90
     servoGPIO=18
-    
-    def __init__(self):
-        self.posCam=90
-        self.servoGPIO=18
-        self.movePos(self.posCam)
 
 
     def get_configuration_template(self):
+        self.movePos(self.posCam)
         return{'ADDRESS' : u'kk@kk.com', 'FROMADD' : u'kk@kk.com', 'TOADDRS' : u'kk@kk.com', 'SUBJECT' : u'Imagen', u'SMTPSRV' : u'smtp.gmail.com:587', 'LOGINID' : u'changeme', 'LOGINPW' : u'changeme'} 
 
     @botcmd
@@ -45,7 +45,7 @@ class Camera(BotPlugin):
         data = p.communicate()
         split_data = data[0].split()
         ipaddr = split_data[split_data.index('src')+1]
-        my_ip = 'La ip de la raspberry es %s' %  ipaddr
+        my_ip = 'La ip de la raspberry es %s' % ipaddr
         #yield "Thanks for sending\n**%(body)s**" % msg
         yield my_ip
 
@@ -63,13 +63,13 @@ class Camera(BotPlugin):
         yield "I'm taking the picture, wait a second "
         if (args):
             try:
-               cam=int(args)
+                cam=int(args)
             except:
-               cam=0
+                cam=0
         else:
             cam=0
         yield "Camera %s"%cam
-        self.camera("/tmp/imagen.png",cam)
+        self.camera("/tmp/imagen.png",self.cam)
         yield "Now I'm sending it"
         self.mail("/tmp/imagen.png", quien)
         my_msg = "I've sent it to ... %s"%quien
@@ -82,6 +82,22 @@ class Camera(BotPlugin):
     #
     def angleMap(self, angle):
         return int((round((1950.0/180.0),0)*angle)/10)*10+550
+
+    def movePos(self, pos):
+        servo = PWM.Servo()
+        servo.set_servo(self.servoGPIO, self.angleMap(self.posCam))
+        time.sleep(VEL)
+        servo.stop_servo(self.servoGPIO)
+        self.posCam=pos
+
+    def move(self, pos, inc=1):
+        print "Aqui"
+        print "Going from %d to %d"%(self.posCam, pos)
+        if (pos < self.posCam):
+            inc = -1*inc
+        for i in range(self.posCam, pos, inc):
+            print i
+            self.movePos(i)
 
 
     def camera(self, imgFile, whichCam):
@@ -139,27 +155,27 @@ class Camera(BotPlugin):
 
     @botcmd
     def rfoto(self, msg, args):
-	"""Move the servo, take the picture, send it.
-	   It won't return to the initial position
-        """
+        #Move the servo, take the picture, send it.
+        #It won't return to the initial position
+    
 
         cam=0
         if (args):
             try:
-	       mov = float(args)
+                mov = float(args)
             except:
-               mov = 90
+                mov = 90
         else:
             mov = 90
 
 
-	yield "Going to %d"%mov
-	self.movePos(self.angleMap(mov))
+        yield "Going to %d"%mov
+        self.movePos(self.angleMap(mov))
 
         quien=msg.getFrom().getStripped()
 
         yield "I'm taking the picture, wait a second "
-        self.camera("/tmp/imagen.png",cam)
+        self.camera("/tmp/imagen.png",self.cam)
 
         yield "Now I'm sending the picture"
         self.mail("/tmp/imagen.png", quien)
@@ -168,26 +184,25 @@ class Camera(BotPlugin):
 
     @botcmd
     def mfoto(self, msg, args):
-	"""Move the servo, take the picture, send it, return to
-           the initial position. Now with angles instead percentages.
-        """
+        # Move the servo, take the picture, send it, return to
+        # the initial position. Now with angles instead percentages."""
 
         if (args):
             try:
-	       mov = float(args)
+                mov = int(args)
             except:
-               mov = 90
+                mov = 90
         else:
             mov = 90
 
-
-	yield "Going to %d"%mov
-	self.move(servoGPIO, mov)
+        yield "Going to %d"%mov
+        self.move(mov)
+        yield "In %d"%mov
 
         quien=msg.getFrom().getStripped()
 
         yield "I'm taking the picture, wait a second "
-        self.camera("/tmp/imagen.png",cam)
+        self.camera("/tmp/imagen.png",self.cam)
 
         yield "Now I'm sending the picture"
         self.mail("/tmp/imagen.png", quien)
@@ -195,24 +210,4 @@ class Camera(BotPlugin):
         my_msg = "I've sent it to ... %s"%quien
 
 
-    def movePos(self, pos):
-        servo = PWM.Servo()
-        servo.set_servo(self.servoGPIO, self.angleMap(self.posCam))
-        time.sleep(VEL)
-        servo.stop_servo(self.servoGPIO)
 
-      
-    def move(self, pos, inc=1):
-
-
-        if pos < self.posCam:
-            sign = -1
-        else:
-            sign = 1
-
-
-	print self.posCam, pos
-
-        for i in range(self.posCam, pos, sign):
-            print i
-            self.movePos(i)
