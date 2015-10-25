@@ -8,7 +8,7 @@ from RPIO import PWM
 
 MAX=2340
 MIN=600
-VEL=0.2
+VEL=0.4
 
 import cv2, time
 
@@ -23,7 +23,7 @@ class Camera(BotPlugin):
     """Example 'Hello, world!' plugin for Err"""
     cam=0
     posCam=90
-    servoGPIO=18
+    servoGPIO=4
 
 
     def get_configuration_template(self):
