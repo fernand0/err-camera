@@ -1,6 +1,7 @@
 
+# msg.getFrom().getStripped() has disappeared
+# I've replaced it with msg.frm.person
 from errbot import BotPlugin, botcmd
-from errbot.builtins.webserver import webhook
 
 import subprocess,os,time
 import math
@@ -33,7 +34,8 @@ class Camera(BotPlugin):
     @botcmd
     def hello(self, msg, args):
         """Say hello to the world"""
-        yield "Hello, %s!"%msg.getFrom().getStripped()
+        #yield "Hello, %s!"%msg.getFrom().getStripped()
+        yield "Hello, %s!"%msg.frm.person
         yield "Hello, %s!"%msg.getTo()
         yield "Hello, world!"
 
@@ -64,7 +66,7 @@ class Camera(BotPlugin):
     @botcmd
     def foto(self, msg, args):
         """Take a picture"""
-        quien=msg.getFrom().getStripped()
+        quien=msg.frm.person
         yield "I'm taking the picture, wait a second "
         if (args):
             try:
@@ -173,7 +175,7 @@ class Camera(BotPlugin):
         yield "Going to %d"%mov
         self.movePos(mov)
 
-        quien=msg.getFrom().getStripped()
+        quien=msg.frm.person
 
         yield "I'm taking the picture, wait a second "
         self.camera("/tmp/imagen.png",self.cam)
@@ -200,7 +202,7 @@ class Camera(BotPlugin):
         self.move(mov)
         yield "In %d"%mov
 
-        quien=msg.getFrom().getStripped()
+        quien=msg.frm.person
 
         yield "I'm taking the picture, wait a second "
         self.camera("/tmp/imagen.png",self.cam)
