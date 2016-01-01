@@ -12,6 +12,14 @@ MIN=600
 VEL=0.4
 
 import cv2, time
+# You can install opencv in the usual way and then make it available to your
+# virtual env
+# http://www.pyimagesearch.com/2015/07/27/installing-opencv-3-0-for-both-python-2-7-and-python-3-on-your-raspberry-pi-2/
+#
+# In our case:
+# cd ~/.pyenv/versions/2.7.10/lib/python2.7/site-packages
+# ln -s /usr/lib/pyshared/python2.7/cv2.so
+
 
 import smtplib, mimetypes, time, datetime
 from email import Encoders
