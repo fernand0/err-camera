@@ -1,11 +1,11 @@
-
 # msg.getFrom().getStripped() has disappeared
 # I've replaced it with msg.frm.person
 from errbot import BotPlugin, botcmd
 
 import subprocess,os,time
 import math
-from RPIO import PWM
+import time
+#from RPIO import PWM
 
 MAX=2340
 MIN=600
@@ -22,10 +22,17 @@ import cv2, time
 
 
 import smtplib, mimetypes, time, datetime
-from email import Encoders
-from email.MIMEText import MIMEText
-from email.MIMEBase import MIMEBase
-from email.MIMEMultipart import MIMEMultipart
+#from email import Encoders
+#from email.MIMEText import MIMEText
+#from email.MIMEBase import MIMEBase
+#from email.MIMEMultipart import MIMEMultipart
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+from email.utils import formatdate
+from email import encoders
+
 
 
 class Camera(BotPlugin):
@@ -36,7 +43,7 @@ class Camera(BotPlugin):
 
 
     def get_configuration_template(self):
-        self.movePos(self.posCam)
+        #self.movePos(self.posCam)
         return{'ADDRESS' : u'kk@kk.com', 'FROMADD' : u'kk@kk.com', 'TOADDRS' : u'kk@kk.com', 'SUBJECT' : u'Imagen', u'SMTPSRV' : u'smtp.gmail.com:587', 'LOGINID' : u'changeme', 'LOGINPW' : u'changeme'} 
 
     @botcmd
@@ -83,42 +90,44 @@ class Camera(BotPlugin):
                 cam=0
         else:
             cam=0
+        tt = time.gmtime()
+        imgFile = "/tmp/%s-%s-%s-%s%s%s_image.png" % (tt[0], tt[1], tt[2], tt[3], tt[4], tt[5])
         yield "Camera %s"%cam
-        self.camera("/tmp/imagen.png",self.cam)
+        self.camera(imgFile,self.cam)
         yield "Now I'm sending it"
-        self.mail("/tmp/imagen.png", quien)
+        self.mail(imgFile, quien)
         my_msg = "I've sent it to ... %s"%quien
         yield my_msg
 
-    # This function maps the angle we want to move the servo to, to the needed
-    # PWM value
-    #
-    # https://github.com/MattStultz/PiCam
-    #
-    def angleMap(self, angle):
-        return int((round((1950.0/180.0),0)*angle)/10)*10+550
-
-    def movePos(self, pos):
-        servo = PWM.Servo()
-        print pos 
-        print self.posCam 
-        servo.set_servo(self.servoGPIO, self.angleMap(pos))
-        time.sleep(VEL)
-        servo.stop_servo(self.servoGPIO)
-        self.posCam=pos
-
-    def move(self, pos, inc=1):
-        if (pos < self.posCam):
-            inc = -1*inc
-        for i in range(self.posCam, pos, inc):
-            self.movePos(i)
+#    # This function maps the angle we want to move the servo to, to the needed
+#    # PWM value
+#    #
+#    # https://github.com/MattStultz/PiCam
+#    #
+#    def angleMap(self, angle):
+#        return int((round((1950.0/180.0),0)*angle)/10)*10+550
+#
+#    def movePos(self, pos):
+#        servo = PWM.Servo()
+#        print(pos)
+#        print(self.posCam)
+#        servo.set_servo(self.servoGPIO, self.angleMap(pos))
+#        time.sleep(VEL)
+#        servo.stop_servo(self.servoGPIO)
+#        self.posCam=pos
+#
+#    def move(self, pos, inc=1):
+#        if (pos < self.posCam):
+#            inc = -1*inc
+#        for i in range(self.posCam, pos, inc):
+#            self.movePos(i)
 
 
     def camera(self, imgFile, whichCam):
         """Take a picture"""
         cam=cv2.VideoCapture(whichCam)
-        cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 1280)
-        cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 960)
+        cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
         retval, img = cam.read() 
         cv2.imwrite(imgFile, img)
         del(cam)
@@ -145,10 +154,8 @@ class Camera(BotPlugin):
             # We are including the date in the body of the message.
             part1 = MIMEText(text, 'plain')
 
-            part2 = MIMEBase(main, sub)
-            part2.set_payload(open(imgFile,"rb").read())
-            Encoders.encode_base64(part2)
-            part2.add_header('Content-Disposition', 'attachment; filename="%s"' % imgFile)
+            part2 = MIMEImage(open(imgFile,"rb").read(),name=os.path.basename(imgFile))
+            part2.add_header('Content-Disposition', 'attachment: filename="{}"'.format(imgFile))
             mensaje.attach(part1)
             mensaje.attach(part2)
     
@@ -164,61 +171,61 @@ class Camera(BotPlugin):
             server.ehlo()
             server.starttls()
             server.login(loginId, loginPw)
-            server.sendmail(fromaddr, [destaddr]+[toaddrs], mensaje.as_string(0))
+            server.sendmail(fromaddr, [destaddr]+[toaddrs], mensaje.as_string())
             server.quit() 
 
-    @botcmd
-    def rfoto(self, msg, args):
-        #Move the servo, take the picture, send it.
-        #It won't return to the initial position
-
-        if (args):
-            try:
-                mov = int(args)
-            except:
-                mov = 90
-        else:
-            mov = 90
-
-        yield "Going to %d"%mov
-        self.movePos(mov)
-
-        quien=msg.frm.person
-
-        yield "I'm taking the picture, wait a second "
-        self.camera("/tmp/imagen.png",self.cam)
-
-        yield "Now I'm sending the picture"
-        self.mail("/tmp/imagen.png", quien)
-
-        my_msg = "I've sent it to ... %s"%quien
-
-    @botcmd
-    def mfoto(self, msg, args):
-        # Move the servo, take the picture, send it, return to
-        # the initial position. Now with angles instead percentages."""
-
-        if (args):
-            try:
-                mov = int(args)
-            except:
-                mov = 90
-        else:
-            mov = 90
-
-        yield "Going to %d"%mov
-        self.move(mov)
-        yield "In %d"%mov
-
-        quien=msg.frm.person
-
-        yield "I'm taking the picture, wait a second "
-        self.camera("/tmp/imagen.png",self.cam)
-
-        yield "Now I'm sending the picture"
-        self.mail("/tmp/imagen.png", quien)
-
-        my_msg = "I've sent it to ... %s"%quien
+#    @botcmd
+#    def rfoto(self, msg, args):
+#        #Move the servo, take the picture, send it.
+#        #It won't return to the initial position
+#
+#        if (args):
+#            try:
+#                mov = int(args)
+#            except:
+#                mov = 90
+#        else:
+#            mov = 90
+#
+#        yield "Going to %d"%mov
+#        self.movePos(mov)
+#
+#        quien=msg.frm.person
+#
+#        yield "I'm taking the picture, wait a second "
+#        self.camera("/tmp/imagen.png",self.cam)
+#
+#        yield "Now I'm sending the picture"
+#        self.mail("/tmp/imagen.png", quien)
+#
+#        my_msg = "I've sent it to ... %s"%quien
+#
+#    @botcmd
+#    def mfoto(self, msg, args):
+#        # Move the servo, take the picture, send it, return to
+#        # the initial position. Now with angles instead percentages."""
+#
+#        if (args):
+#            try:
+#                mov = int(args)
+#            except:
+#                mov = 90
+#        else:
+#            mov = 90
+#
+#        yield "Going to %d"%mov
+#        self.move(mov)
+#        yield "In %d"%mov
+#
+#        quien=msg.frm.person
+#
+#        yield "I'm taking the picture, wait a second "
+#        self.camera("/tmp/imagen.png",self.cam)
+#
+#        yield "Now I'm sending the picture"
+#        self.mail("/tmp/imagen.png", quien)
+#
+#        my_msg = "I've sent it to ... %s"%quien
 
 
 
