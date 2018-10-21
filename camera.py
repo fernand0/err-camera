@@ -91,12 +91,14 @@ class Camera(BotPlugin):
         else:
             cam=0
         tt = time.gmtime()
-        imgFile = "/tmp/%s-%s-%s-%s%s%s_image.png" % (tt[0], tt[1], tt[2], tt[3], tt[4], tt[5])
+        imgFile = "/tmp/%s-%s-%s-%s%s%s_image.png" % (tt[0], tt[1], 
+                tt[2], tt[3], tt[4], tt[5])
         yield "Camera %s"%cam
+        yield "Cheese..."
         self.camera(imgFile,self.cam)
         yield "Now I'm sending it"
         self.mail(imgFile, quien)
-        my_msg = "I've sent it to ... %s"%quien
+        my_msg = "I've sent it to ... %s with file name %s" % (quien, imgFile)
         yield my_msg
 
 #    # This function maps the angle we want to move the servo to, to the needed
