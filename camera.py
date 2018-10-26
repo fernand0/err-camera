@@ -81,7 +81,10 @@ class Camera(BotPlugin):
     @botcmd
     def foto(self, msg, args):
         """Take a picture"""
-        quien=msg.frm.person
+        if 'frm' in msg:
+           quien=msg.frm.person
+        else:
+           quien=""
         yield "I'm taking the picture, wait a second "
         if (args):
             try:
@@ -143,38 +146,38 @@ class Camera(BotPlugin):
             toaddrs=self.config['TOADDRS']
         else:
             toaddrs  = address
-            subject  = self.config['SUBJECT']
-            smtpsrv  = self.config['SMTPSRV']
-            loginId  = self.config['LOGINID']
-            loginPw  = self.config['LOGINPW']
+        subject  = self.config['SUBJECT']
+        smtpsrv  = self.config['SMTPSRV']
+        loginId  = self.config['LOGINID']
+        loginPw  = self.config['LOGINPW']
     
-            mensaje = MIMEMultipart()
+        mensaje = MIMEMultipart()
     
-            format, enc = mimetypes.guess_type(imgFile)
-            main, sub = format.split('/')
-            text = "Picture taken on: %s"%datetime.datetime.now().isoformat()
-            # We are including the date in the body of the message.
-            part1 = MIMEText(text, 'plain')
+        format, enc = mimetypes.guess_type(imgFile)
+        main, sub = format.split('/')
+        text = "Picture taken on: %s"%datetime.datetime.now().isoformat()
+        # We are including the date in the body of the message.
+        part1 = MIMEText(text, 'plain')
 
-            part2 = MIMEImage(open(imgFile,"rb").read(),name=os.path.basename(imgFile))
-            part2.add_header('Content-Disposition', 'attachment: filename="{}"'.format(imgFile))
-            mensaje.attach(part1)
-            mensaje.attach(part2)
+        part2 = MIMEImage(open(imgFile,"rb").read(),name=os.path.basename(imgFile))
+        part2.add_header('Content-Disposition', 'attachment: filename="{}"'.format(imgFile))
+        mensaje.attach(part1)
+        mensaje.attach(part2)
     
     
-            mensaje['Subject'] = subject
-            mensaje['From'] = fromaddr
-            mensaje['To'] = destaddr
-            mensaje['Cc'] = toaddrs
+        mensaje['Subject'] = subject
+        mensaje['From'] = fromaddr
+        mensaje['To'] = destaddr
+        mensaje['Cc'] = toaddrs
     
-            server = smtplib.SMTP()
-            #server.set_debuglevel(1)
-            server.connect(smtpsrv)
-            server.ehlo()
-            server.starttls()
-            server.login(loginId, loginPw)
-            server.sendmail(fromaddr, [destaddr]+[toaddrs], mensaje.as_string())
-            server.quit() 
+        server = smtplib.SMTP()
+        #server.set_debuglevel(1)
+        server.connect(smtpsrv)
+        server.ehlo()
+        server.starttls()
+        server.login(loginId, loginPw)
+        server.sendmail(fromaddr, [destaddr]+[toaddrs], mensaje.as_string())
+        server.quit() 
 
 #    @botcmd
 #    def rfoto(self, msg, args):
