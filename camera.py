@@ -81,8 +81,11 @@ class Camera(BotPlugin):
     @botcmd
     def foto(self, msg, args):
         """Take a picture"""
-        if 'frm' in msg:
-           quien=msg.frm.person
+        if hasattr(msg, 'frm'):
+            if hasattr(msg.frm, 'person'): 
+                quien=msg.frm.person
+            else:
+                quien = msg.frm
         else:
            quien=""
         yield "I'm taking the picture, wait a second "
