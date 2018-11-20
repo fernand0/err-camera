@@ -66,7 +66,7 @@ class Camera(BotPlugin):
         p=subprocess.Popen(arg,shell=True,stdout=subprocess.PIPE)
         data = p.communicate()
         split_data = data[0].split()
-        ipaddr = split_data[split_data.index('src')+1]
+        ipaddr = split_data[split_data.index(b'src')+1]
         my_ip = 'La ip de la raspberry es %s' % ipaddr
         #yield "Thanks for sending\n**%(body)s**" % msg
         yield my_ip
