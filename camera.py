@@ -11,15 +11,7 @@ MAX=2340
 MIN=600
 VEL=0.4
 
-import cv2, time
-# You can install opencv in the usual way and then make it available to your
-# virtual env
-# http://www.pyimagesearch.com/2015/07/27/installing-opencv-3-0-for-both-python-2-7-and-python-3-on-your-raspberry-pi-2/
-#
-# In our case:
-# cd ~/.pyenv/versions/2.7.10/lib/python2.7/site-packages
-# ln -s /usr/lib/pyshared/python2.7/cv2.so
-
+import time
 
 import smtplib, mimetypes, time, datetime
 #from email import Encoders
@@ -133,12 +125,25 @@ class Camera(BotPlugin):
 
     def camera(self, imgFile, whichCam):
         """Take a picture"""
-        cam=cv2.VideoCapture(whichCam)
-        cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
-        retval, img = cam.read() 
-        cv2.imwrite(imgFile, img)
-        del(cam)
+        try: 
+            import cv2 
+            # You can install opencv in the usual way and then make it
+            # available to your virtual env
+            # http://www.pyimagesearch.com/2015/07/27/installing-opencv-3-0-for-both-python-2-7-and-python-3-on-your-raspberry-pi-2/
+            #
+            # In our case:
+            # cd ~/.pyenv/versions/2.7.10/lib/python2.7/site-packages
+            # ln -s /usr/lib/pyshared/python2.7/cv2.so
+            cam=cv2.VideoCapture(whichCam)
+            cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+            cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
+            retval, img = cam.read() 
+            cv2.imwrite(imgFile, img)
+            del(cam)
+        except:
+            resolution = "1280x960"
+            os.system('fswebcam -r %s %s' % (resolution,imgFile)) # uses Fswebcam to take picture
+
 
     def mail(self, imgFile, address=""):
         """Send a file by mail"""
