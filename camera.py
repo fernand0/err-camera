@@ -141,6 +141,8 @@ class Camera(BotPlugin):
             cv2.imwrite(imgFile, img)
             del(cam)
         except:
+            # https://www.raspberrypi.org/documentation/usage/webcams/
+            # https://gist.github.com/ibanezmatt13/5318252
             resolution = "1280x960"
             os.system('fswebcam -r %s %s' % (resolution,imgFile)) # uses Fswebcam to take picture
 
