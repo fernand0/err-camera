@@ -80,7 +80,8 @@ class Camera(BotPlugin):
                 quien = msg.frm
         else:
            quien=""
-        yield "I'm taking the picture, wait a second "
+        hostname = os.uname()[1] 
+        yield "I'm {} and I'm taking the picture.".format(hostname)
         if (args):
             try:
                 cam=int(args)
@@ -89,13 +90,13 @@ class Camera(BotPlugin):
         else:
             cam=0
         tt = time.gmtime()
-        imgFile = "/tmp/%s-%s-%s-%s%s%s_image.png" % (tt[0], tt[1], 
-                tt[2], tt[3], tt[4], tt[5])
+        imgFile = "/tmp/%s_%s-%s-%s-%s%s%s_image.png" % (hostname, 
+                tt[0], tt[1], tt[2], tt[3], tt[4], tt[5])
         yield "Camera %s"%cam
         yield "Cheese..."
         self.camera(imgFile,self.cam)
         yield "Now I'm sending it"
-        self.mail(imgFile, quien)
+        self.mail(imgFile, quien, hostname)
         my_msg = "I've sent it to ... %s with file name %s" % (quien, imgFile)
         yield my_msg
 
@@ -147,7 +148,7 @@ class Camera(BotPlugin):
             os.system('fswebcam -r %s %s' % (resolution,imgFile)) # uses Fswebcam to take picture
 
 
-    def mail(self, imgFile, address=""):
+    def mail(self, imgFile, address="", subject=""):
         """Send a file by mail"""
 
         destaddr = self.config['ADDRESS']
@@ -156,7 +157,10 @@ class Camera(BotPlugin):
             toaddrs=self.config['TOADDRS']
         else:
             toaddrs  = address
-        subject  = self.config['SUBJECT']
+        if subject:
+            subject = subject + ' ' + self.config['SUBJECT']
+        else:
+            subject  = self.config['SUBJECT']
         smtpsrv  = self.config['SMTPSRV']
         loginId  = self.config['LOGINID']
         loginPw  = self.config['LOGINPW']
@@ -165,7 +169,7 @@ class Camera(BotPlugin):
     
         format, enc = mimetypes.guess_type(imgFile)
         main, sub = format.split('/')
-        text = "Picture taken on: %s"%datetime.datetime.now().isoformat()
+        text = "Picture taken in %s on: %s"%(subject,datetime.datetime.now().isoformat())
         # We are including the date in the body of the message.
         part1 = MIMEText(text, 'plain')
 
