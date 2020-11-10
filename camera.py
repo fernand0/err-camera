@@ -129,6 +129,7 @@ class Camera(BotPlugin):
         try: 
             import cv2 
             # pip install opencv-python
+            # https://www.pyimagesearch.com/2018/09/19/pip-install-opencv/
             # or
             # You can install opencv in the usual way and then make it
             # available to your virtual env
