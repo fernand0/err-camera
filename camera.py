@@ -128,6 +128,8 @@ class Camera(BotPlugin):
         """Take a picture"""
         try: 
             import cv2 
+            # pip install opencv-python
+            # or
             # You can install opencv in the usual way and then make it
             # available to your virtual env
             # http://www.pyimagesearch.com/2015/07/27/installing-opencv-3-0-for-both-python-2-7-and-python-3-on-your-raspberry-pi-2/
@@ -184,7 +186,8 @@ class Camera(BotPlugin):
         mensaje['To'] = destaddr
         mensaje['Cc'] = toaddrs
     
-        server = smtplib.SMTP()
+        self.log.info("Server {}".format(smtpsrv.split(':')[0]))
+        server = smtplib.SMTP('smtp.gmail.com')
         #server.set_debuglevel(1)
         server.connect(smtpsrv)
         server.ehlo()
