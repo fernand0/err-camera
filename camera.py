@@ -187,8 +187,10 @@ class Camera(BotPlugin):
         mensaje['To'] = destaddr
         mensaje['Cc'] = toaddrs
     
-        self.log.info("Server {}".format(smtpsrv.split(':')[0]))
-        server = smtplib.SMTP('smtp.gmail.com')
+        serverIP,serverPort = smtpsrv.split(':')
+        self.log.info("Server {} Port: {}".format(
+            serverIP, serverPort))
+        server = smtplib.SMTP('smtp.gmail.com', int(serverPort))
         #server.set_debuglevel(1)
         server.connect(smtpsrv)
         server.ehlo()
