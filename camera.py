@@ -84,17 +84,18 @@ class Camera(BotPlugin):
         yield "I'm {} and I'm taking the picture.".format(hostname)
         if (args):
             try:
-                cam=int(args)
+                self.cam=int(args)
             except:
-                cam=0
+                self.cam=0
         else:
-            cam=0
+            self.cam=0
         tt = time.gmtime()
         imgFile = "/tmp/%s_%s-%s-%s-%s%s%s_image.png" % (hostname, 
                 tt[0], tt[1], tt[2], tt[3], tt[4], tt[5])
-        yield "Camera %s"%cam
+        yield "Camera %s"%self.cam
+        #yield "File %s"%imgFile
         yield "Cheese..."
-        self.camera(imgFile,self.cam)
+        self.camera(imgFile, self.cam)
         yield "Now I'm sending it"
         self.mail(imgFile, quien, hostname)
         my_msg = "I've sent it to ... %s with file name %s" % (quien, imgFile)
