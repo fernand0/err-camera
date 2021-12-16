@@ -73,32 +73,34 @@ class Camera(BotPlugin):
     @botcmd
     def foto(self, msg, args):
         """Take a picture"""
-        if hasattr(msg, 'frm'):
-            if hasattr(msg.frm, 'person'): 
-                quien=msg.frm.person
+        if not self.config:
+            yield "Plugin needs to be configured"
+        else:
+            if hasattr(msg, 'frm'):
+                if hasattr(msg.frm, 'person'): 
+                    quien=msg.frm.person
+                else:
+                    quien = msg.frm
             else:
-                quien = msg.frm
-        else:
-           quien=""
-        hostname = os.uname()[1] 
-        yield "I'm {} and I'm taking the picture.".format(hostname)
-        if (args):
-            try:
-                self.cam=int(args)
-            except:
-                self.cam=0
-        else:
-            self.cam=0
-        tt = time.gmtime()
-        imgFile = "/tmp/%s_%s-%s-%s-%s%s%s_image.png" % (hostname, 
-                tt[0], tt[1], tt[2], tt[3], tt[4], tt[5])
-        yield "Camera %s"%self.cam
-        #yield "File %s"%imgFile
-        yield "Cheese..."
-        self.camera(imgFile, self.cam)
-        yield "Now I'm sending it"
-        self.mail(imgFile, quien, hostname)
-        my_msg = "I've sent it to ... %s with file name %s" % (quien, imgFile)
+               quien=""
+            hostname = os.uname()[1] 
+            yield "I'm {} and I'm taking the picture.".format(hostname)
+            if (args):
+                try:
+                    cam=int(args)
+                except:
+                    cam=0
+            else:
+                cam=0
+            tt = time.gmtime()
+            imgFile = "/tmp/%s_%s-%s-%s-%s%s%s_image.png" % (hostname, 
+                    tt[0], tt[1], tt[2], tt[3], tt[4], tt[5])
+            yield "Camera %s"%cam
+            yield "Cheese..."
+            self.camera(imgFile,self.cam)
+            yield "Now I'm sending it"
+            self.mail(imgFile, quien, hostname)
+            my_msg = "I've sent it to ... %s with file name %s" % (quien, imgFile)
         yield my_msg
 
 #    # This function maps the angle we want to move the servo to, to the needed
