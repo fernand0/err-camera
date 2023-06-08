@@ -73,6 +73,7 @@ class Camera(BotPlugin):
     @botcmd
     def foto(self, msg, args):
         """Take a picture"""
+        my_msg = ""
         if not self.config:
             yield "Plugin needs to be configured"
         else:
@@ -190,15 +191,22 @@ class Camera(BotPlugin):
         mensaje['To'] = destaddr
         mensaje['Cc'] = toaddrs
     
-        serverIP,serverPort = smtpsrv.split(':')
-        self.log.info("Server {} Port: {}".format(
-            serverIP, serverPort))
-        server = smtplib.SMTP('smtp.gmail.com', int(serverPort))
+        if ':' in smtpsrv:
+            serverIP,serverPort = smtpsrv.split(':')
+            self.log.info("Server {} Port: {}".format(
+                serverIP, serverPort))
+            server = smtplib.SMTP(serverIP, int(serverPort))
+        else:
+            serverIP = smtpsrv
+            server = smtplib.SMTP(serverIP)
         #server.set_debuglevel(1)
         server.connect(smtpsrv)
         server.ehlo()
         server.starttls()
-        server.login(loginId, loginPw)
+        try:
+            server.login(loginId, loginPw)
+        except:
+            pass
         server.sendmail(fromaddr, [destaddr]+[toaddrs], mensaje.as_string())
         server.quit() 
 
